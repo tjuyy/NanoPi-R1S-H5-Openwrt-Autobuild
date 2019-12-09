@@ -85,6 +85,12 @@ jobs:
       - name: SSH connection to Actions
         uses: P3TERX/debugger-action@master
 
+      - name: Backup step, only run if previous step status check is failure
+        if: failure()
+        run: |
+          cd friendlywrt-h5/friendlywrt
+          wget -O .config https://gist.githubusercontent.com/tjuyy/230f85d59dae048d6d5a92b6039de9ec/raw/a16852e1d2cd714a7719e484098ae83610cf4fd4/NanoPi-R1S-H5.config
+
       - name: Download package
         run: |
           cd friendlywrt-h5/friendlywrt
