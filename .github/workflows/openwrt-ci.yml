@@ -1,0 +1,114 @@
+#=================================================
+# Description: NanoPi R1S-H5 OpenWrt Autobuild
+# Lisence: MIT
+# Author: tjuyy
+#=================================================
+
+name: NanoPi R1S-H5 OpenWrt Autobuild
+
+on:
+  release:
+    types: [published]
+  push:
+    branches:
+      - master
+    paths:
+      - ".config"
+  #  schedule:
+  #    - cron: 0 8 * * 5
+  watch:
+    types: [started]
+
+jobs:
+  build:
+    runs-on: ubuntu-18.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@master
+
+      - name: Initialization environment
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          docker rmi `docker images -q`
+          echo "Deleting files, please wait ..."
+          sudo rm -rf /usr/share/dotnet /etc/mysql /etc/php
+          sudo -E apt-get -y purge azure-cli ghc* zulu* hhvm llvm* firefox google* dotnet* powershell openjdk* mysql* php*
+          sudo -E apt-get update
+          sudo -E apt-get -y install build-essential asciidoc binutils bzip2 gawk gettext git libncurses5-dev libz-dev patch unzip zlib1g-dev lib32gcc1 libc6-dev-i386 subversion flex uglifyjs git-core gcc-multilib p7zip p7zip-full msmtp libssl-dev texinfo libglib2.0-dev xmlto qemu-utils upx libelf-dev autoconf automake libtool autopoint device-tree-compiler
+          sudo -E apt-get -y autoremove --purge
+          sudo -E apt-get clean
+          sudo wget -O - https://raw.githubusercontent.com/friendlyarm/build-env-on-ubuntu-bionic/master/install.sh | bash
+
+      - name: Clone Lean's OpenWrt source code
+        env:
+          REPO_URL: https://github.com/coolsnowwolf/lede
+          REPO_BRANCH: master
+        run: git clone --depth 1 $REPO_URL -b $REPO_BRANCH lede
+
+      - name: Clone Friendlyarm's OpenWrt source code
+        run: |
+          git clone https://github.com/friendlyarm/repo
+          sudo cp repo/repo /usr/bin/
+          mkdir friendlywrt-h5
+          cd friendlywrt-h5
+          repo init -u https://github.com/friendlyarm/friendlywrt_manifests -b master -m h5.xml --repo-url=https://github.com/friendlyarm/repo  --no-clone-bundle
+          repo sync -c  --no-clone-bundle
+
+      - name: Merge upstearm OpenWrt source
+        run: |
+          rm -rf friendlywrt && mkdir friendlywrt && cd friendlywrt
+          git init
+          git config user.email abc@abc.com
+          git config user.name abc
+          git remote add origin https://github.com/friendlyarm/friendlywrt.git
+          git remote add upstream https://github.com/openwrt/openwrt.git
+          git pull origin master-v18.06.1
+          git pull upstream openwrt-18.06 --no-edit
+
+      - name: Merge Lean's OpenWrt source
+        run: |
+          cp -r ../../lede/package/lean package/
+          sed -i 's/https:\/\/git.openwrt.org\/project\/luci.git;openwrt-18.06/https:\/\/github.com\/coolsnowwolf\/luci/' feeds.conf.default
+
+      - name: Update Target.mk
+        run: |
+          sed -i 's/dnsmasq /dnsmasq-full luci/' include/target.mk
+
+      - name: Update feeds
+        run: ./scripts/feeds update -a
+
+      - name: Install feeds
+        run: ./scripts/feeds install -a
+
+      - name: SSH connection to Actions
+        uses: P3TERX/debugger-action@master
+
+      - name: Download package
+        run: |
+          make download -j8
+          find dl -size -1024c -exec ls -l {} \;
+          find dl -size -1024c -exec rm -f {} \;
+
+      - name: Build
+        run: |
+          cd ..
+          echo "Start building..."
+          ./build.sh nanopi_r1s.mk
+
+      - name: Zip Files
+        run: |
+          find out/ -name "FriendlyWrt_*img*" | xargs -i zip -r {}.zip {}
+
+      - name: Assemble Artifact
+        run: |
+          rm -rf ./artifact/
+          mkdir -p ./artifact/
+          find out/ -name "FriendlyWrt_*img.zip*" | xargs -i mv -f {} ./artifact/
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@master
+        with:
+          name: FriendlyWrt_NanoPi-R1S
+          path: ./artifact/
