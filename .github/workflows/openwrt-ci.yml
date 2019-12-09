@@ -88,8 +88,7 @@ jobs:
       - name: Backup step, only run if previous step status check is failure
         if: failure()
         run: |
-          cd friendlywrt-h5/friendlywrt
-          wget -O .config https://gist.githubusercontent.com/tjuyy/230f85d59dae048d6d5a92b6039de9ec/raw/a16852e1d2cd714a7719e484098ae83610cf4fd4/NanoPi-R1S-H5.config
+          [ -e friendlywrt-h5/friendlywrt/.config ] || cp NanoPi-R1S-H5.config friendlywrt-h5/friendlywrt/.config
 
       - name: Download package
         run: |
