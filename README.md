@@ -6,8 +6,8 @@
   <br>
   <br>
   <a target="_blank" href="LICENSE" title="License: MIT"><img src="https://img.shields.io/github/license/mashape/apistatus.svg?style=flat-square&label=LICENSE"></a>
-  <a target="_blank" href="LICENSE" title="Stars"><img src="https://img.shields.io/github/stars/tjuyy/NanoPi-R1S-H5-Openwrt-Autobuild.svg?style=flat-square&label=Stars"></a>
-  <a target="_blank" href="LICENSE" title="Forks"><img src="https://img.shields.io/github/forks/tjuyy/NanoPi-R1S-H5-Openwrt-Autobuild.svg?style=flat-square&label=Forks"></a>
+  <a target="_blank" href="https://github.com/tjuyy/NanoPi-R1S-H5-Openwrt-Autobuild/stargazers" title="Stars"><img src="https://img.shields.io/github/stars/tjuyy/NanoPi-R1S-H5-Openwrt-Autobuild.svg?style=flat-square&label=Stars"></a>
+  <a target="_blank" href="https://github.com/tjuyy/NanoPi-R1S-H5-Openwrt-Autobuild/fork" title="Forks"><img src="https://img.shields.io/github/forks/tjuyy/NanoPi-R1S-H5-Openwrt-Autobuild.svg?style=flat-square&label=Forks"></a>
 </p>
 
 <p align="center">
