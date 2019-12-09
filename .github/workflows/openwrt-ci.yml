@@ -58,6 +58,7 @@ jobs:
 
       - name: Merge upstearm OpenWrt source
         run: |
+          cd friendlywrt-h5
           rm -rf friendlywrt && mkdir friendlywrt && cd friendlywrt
           git init
           git config user.email abc@abc.com
@@ -69,43 +70,42 @@ jobs:
 
       - name: Merge Lean's OpenWrt source
         run: |
+          cd friendlywrt-h5/friendlywrt
           cp -r ../../lede/package/lean package/
           sed -i 's/https:\/\/git.openwrt.org\/project\/luci.git;openwrt-18.06/https:\/\/github.com\/coolsnowwolf\/luci/' feeds.conf.default
-
-      - name: Update Target.mk
-        run: |
           sed -i 's/dnsmasq /dnsmasq-full luci/' include/target.mk
 
-      - name: Update feeds
-        run: ./scripts/feeds update -a
-
-      - name: Install feeds
-        run: ./scripts/feeds install -a
+      - name: Update and install feeds
+        run: |
+          cd friendlywrt-h5/friendlywrt
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
 
       - name: SSH connection to Actions
         uses: P3TERX/debugger-action@master
 
       - name: Download package
         run: |
+          cd friendlywrt-h5/friendlywrt
           make download -j8
           find dl -size -1024c -exec ls -l {} \;
           find dl -size -1024c -exec rm -f {} \;
 
       - name: Build
         run: |
-          cd ..
+          cd friendlywrt-h5
           echo "Start building..."
           ./build.sh nanopi_r1s.mk
 
       - name: Zip Files
         run: |
-          find out/ -name "FriendlyWrt_*img*" | xargs -i zip -r {}.zip {}
+          find friendlywrt-h5/out/ -name "FriendlyWrt_*img*" | xargs -i zip -r {}.zip {}
 
       - name: Assemble Artifact
         run: |
           rm -rf ./artifact/
           mkdir -p ./artifact/
-          find out/ -name "FriendlyWrt_*img.zip*" | xargs -i mv -f {} ./artifact/
+          find friendlywrt-h5/out/ -name "FriendlyWrt_*img.zip*" | xargs -i mv -f {} ./artifact/
 
       - name: Upload Artifact
         uses: actions/upload-artifact@master
