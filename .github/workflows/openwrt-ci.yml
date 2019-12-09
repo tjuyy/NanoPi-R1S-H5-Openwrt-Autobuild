@@ -89,8 +89,10 @@ jobs:
         if: failure()
         run: |
           [ -e friendlywrt-h5/friendlywrt/.config ] || cp NanoPi-R1S-H5.config friendlywrt-h5/friendlywrt/.config
+          cat friendlywrt-h5/friendlywrt/.config
 
       - name: Download package
+        if: always()
         run: |
           cd friendlywrt-h5/friendlywrt
           make download -j8
@@ -98,22 +100,26 @@ jobs:
           find dl -size -1024c -exec rm -f {} \;
 
       - name: Build
+        if: always()
         run: |
           cd friendlywrt-h5
           echo "Start building..."
           ./build.sh nanopi_r1s.mk
 
       - name: Zip Files
+        if: always()
         run: |
           find friendlywrt-h5/out/ -name "FriendlyWrt_*img*" | xargs -i zip -r {}.zip {}
 
       - name: Assemble Artifact
+        if: always()
         run: |
           rm -rf ./artifact/
           mkdir -p ./artifact/
           find friendlywrt-h5/out/ -name "FriendlyWrt_*img.zip*" | xargs -i mv -f {} ./artifact/
 
       - name: Upload Artifact
+        if: always()
         uses: actions/upload-artifact@master
         with:
           name: FriendlyWrt_NanoPi-R1S
