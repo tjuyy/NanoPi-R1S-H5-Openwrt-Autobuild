@@ -49,7 +49,7 @@ jobs:
           mkdir friendlywrt-h5
           cd friendlywrt-h5
           repo init -u https://github.com/friendlyarm/friendlywrt_manifests -b master-v18.06.1 -m h5.xml --repo-url=https://github.com/friendlyarm/repo  --no-clone-bundle
-          repo sync -c  --no-clone-bundle
+          repo sync -c  --no-clone-bundle -j$(nproc)
 
       - name: Merge upstearm OpenWrt source
         run: |
