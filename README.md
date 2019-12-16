@@ -37,6 +37,13 @@
     ````
 7. Wait completion of the workflow and download files from `Aritifact`
 
+## Info
+
+- gateway: 192.168.2.1
+- wifi password: password
+- wan.ifname='eth0'
+- lan.ifname='eth1'
+
 ## Acknowledgments
 
 - [GitHub Actions](https://github.com/features/actions)
