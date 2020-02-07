@@ -80,17 +80,12 @@ jobs:
           find dl -size -1024c -exec ls -l {} \;
           find dl -size -1024c -exec rm -f {} \;
           
-      - name: Multi-thread compile
+      - name: Build
+        if: always()
         run: |
-          cd friendlywrt-h5/friendlywrt
-          echo -e "$(nproc) thread compile"
-          make -j$(nproc)
-        
-      - name: Single-thread compile
-        if: failure()
-        run: |
-          cd friendlywrt-h5/friendlywrt
-          make -j1 V=s
+          cd friendlywrt-h5
+          echo "Start building..."
+          ./build.sh nanopi_r1s.mk
 
       - name: Zip Files
         if: always()
