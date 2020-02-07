@@ -1,0 +1,113 @@
+#=================================================
+# Description: NanoPi R1S-H5 OpenWrt 19.07 Autobuild
+# Lisence: MIT
+# Author: tjuyy
+#=================================================
+
+name: NanoPi R1S-H5 OpenWrt 19.07 Autobuild
+
+on:
+  release:
+    types: [published]
+  push:
+    branches:
+      - master
+    paths:
+      - "R1S-H5.diffconfig"
+  #  schedule:
+  #    - cron: 0 8 * * 5
+  watch:
+    types: [started]
+
+jobs:
+  build:
+    runs-on: ubuntu-18.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@master
+
+      - name: Initialization environment
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo -E apt-get update
+          sudo -E apt-get clean
+          sudo wget -O - https://raw.githubusercontent.com/friendlyarm/build-env-on-ubuntu-bionic/master/install.sh | bash
+          sudo -E apt-get -y install bc
+          
+      - name: Clone Lean's OpenWrt source code
+        env:
+          REPO_URL: https://github.com/coolsnowwolf/lede
+          REPO_BRANCH: master
+        run: git clone --depth 1 $REPO_URL -b $REPO_BRANCH lede
+
+      - name: Clone Friendlyarm's OpenWrt source code
+        env:
+          BRANCH: master
+        run: |
+          git clone https://github.com/friendlyarm/repo
+          sudo cp repo/repo /usr/bin/
+          mkdir friendlywrt-h5
+          cd friendlywrt-h5
+          repo init -u https://github.com/friendlyarm/friendlywrt_manifests -b $BRANCH -m h5.xml --repo-url=https://github.com/friendlyarm/repo  --no-clone-bundle
+          repo sync -c  --no-clone-bundle -j$(nproc)
+
+      - name: Merge Lean's OpenWrt source
+        run: |
+          cd friendlywrt-h5/friendlywrt
+          cp -r ../../lede/package/lean package/
+
+      - name: Update and install feeds
+        run: |
+          cd friendlywrt-h5/friendlywrt
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+
+      - name: Load custom configuration
+        env:
+          CONFIG_FILE: "R1S-H5.diffconfig"
+        run: |
+          [ -e $CONFIG_FILE ] && mv $CONFIG_FILE friendlywrt-h5/friendlywrt/.config
+          cd friendlywrt-h5/friendlywrt
+          make defconfig
+          
+      - name: Download package
+        if: always()
+        run: |
+          cd friendlywrt-h5/friendlywrt
+          make download -j8
+          find dl -size -1024c -exec ls -l {} \;
+          find dl -size -1024c -exec rm -f {} \;
+          
+      - name: Multi-thread compile
+        run: |
+          cd friendlywrt-h5/friendlywrt
+          echo -e "$(nproc) thread compile"
+          make -j$(nproc)
+        
+      - name: Single-thread compile
+        if: failure()
+        run: |
+          cd friendlywrt-h5/friendlywrt
+          make -j1 V=s
+
+      - name: Zip Files
+        if: always()
+        run: |
+          find friendlywrt-h5/out/ -name "FriendlyWrt_*img*" | xargs -i zip -r {}.zip {}
+          
+      - name: Assemble Artifact
+        if: always()
+        run: |
+          rm -rf ./artifact/
+          mkdir -p ./artifact/
+          find friendlywrt-h5/out/ -name "FriendlyWrt_*img.zip*" | xargs -i mv -f {} ./artifact/
+          
+      - name: Upload Artifact
+        if: always()
+        uses: actions/upload-artifact@master
+        with:
+          name: FriendlyWrt_NanoPi-R1S
+          path: ./artifact/
+          
