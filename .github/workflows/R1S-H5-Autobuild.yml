@@ -57,7 +57,7 @@ jobs:
         run: |
           cd friendlywrt-h5/friendlywrt
           cp -r ../../lede/package/lean package/
-          sed -i 's/dnsmasq /dnsmasq-full default-settings luci /' target.mk 
+          sed -i 's/dnsmasq /dnsmasq-full default-settings luci /' include/target.mk 
 
       - name: Update and install feeds
         run: |
